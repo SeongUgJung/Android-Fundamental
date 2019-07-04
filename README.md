@@ -184,6 +184,19 @@ DB : 같은 앱 - 해당 DB 를 접근할 수 있는 동일한 레벨의 모듈/
 
 Crash. BroadcastReceiver 는 UI Thread 에서 동작하지 않기 때문에 명시적으로 Handler 를 통해 Toast 를 호출해야한다.
 
+질문 의도: 프로세스 우선순위를 이해하고 있는가이다.
+테스트를 해보지 않으면 알기 어렵다.
+Yes라고 해도 안 되고 No라고 해도 안 된다.
+
+답변: Toast는 뜰 때도 있고 안 뜰 때도 있다.
+BroadcastReceiver의 onReceive() 메서드 자체는 UI 스레드에서 동작한다.
+그래서 Toast가 잘 뜰 거 같은데, 조건에 따라 다르다.
+앱에 실행중인 컴포넌트 예를 들어 Activity가 포그라운드에 떠있거나 하면 프로세스 우선 순위가 높기 때문에
+BroadcastReceiver에서 Toast도 잘 뜬다.
+다른 컴포넌트가 실행중인게 없이 어디선가 브로드캐스트를 해서 BroacastReceiver만 달랑 실행될 때는 
+문제가 발생할 수 있다. Toast 자체는 비동기 동작이기 때문에 BroadcastReceiver의 onReceive() 실행중에는 우선순위가 높지만 끝나자마자 프로세스 우선순위가 떨어져서 프로세스는 종료될 수 있다.
+이때는 Toast가 뜨지 못한다.
+
 ### LocalBroadcastManager 역할
 
 ? AndroidManifest 에 선언하지 않은 앱내에서 registerReceiver 로 등록된 리시버를 관리하고 이벤트를 전달한다.
@@ -214,6 +227,12 @@ Leak Canary, Profiler, dumpsys
 
 앱을 특정 sdk api 에 맞춰서 빌드한다.
 
+질문 의도: compileSdkVersion, minSdkVersion과 구분을 하는가?
+답변: 그 버전까지는 호환성 모드를 쓰지 않겠다는 의미다. 호환성 모드는 안드로이드 버전이 올라가더라도 앱의 기존 동작이 바뀌는 것을 방지하기 위한 것이다.
+예를 들어 AsyncTask 병렬 실행이었다가 순차 실행으로 바뀌었는데, targetSdkVersion를 올리지 않으면 
+기존과 동일하다.
+
+
 ### 싱글톤에 Context가 그대로 전달되면 어떤 문제가 생기는가? (코드로 만들기)
 
 ??? ApplicationContext 면 ok. 그외의 Context 면 메모리릭.
@@ -230,6 +249,29 @@ for (int i = 0; i < 4; i++) {
 
 ??? 아마도 화면이 1초씩 끊기며 업데이트?
 
+질문 의도: 문제 있는 코드라는 걸 알고 있는가?
+UI에서 일정 시간 간격으로 UI를 업데이트는 패턴을 알고 있는가?
+
+Runnable updateRunnable = () -> {
+    current++;
+	title.setText("current=" + current);
+	if (current < 4) {
+		handler.postDelayed(this, 1000);	
+	}
+}
+
+
+public void onClick(View v) {
+	handler.post(updateRunnable);
+}
+
+답변: 
+메인 스레드를 블로킹 하기 때문에 1초마다 출력이 되지 않는다.
+5초후에 current=4만 출력된다.
+setText()는 결국 invalidate() 메서드를 호출하면서 MessageQueue에 다시 그리도록 명령하는데,
+그렇다면 MessageQueue에 5번의 invalidate() 메서드 호출로,
+눈에 보이지 않는 순식간에 current=0, current=1, ..., current=3까지 하고서 최종 current=4까지 되는 것은 아닐까 생각할 수도 있는데, invalidate() 내에서 플래그가 있어서 한번만 그리기를 한다.
+
 ======= 일반 =====
 
 ### State 패턴과 Strategy 패턴 차이
@@ -237,6 +279,7 @@ for (int i = 0; i < 4; i++) {
 ### 마커 인터페이스
 
 ? IntRes, Nullable, VisibleForTesting 이런거?
+
 
 ### 애너테이션 활용은?
 
