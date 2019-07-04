@@ -123,6 +123,7 @@ onStop 후 호출
 ### singleTask, singleInstance 차이
 
 ? SingleTask : 1개 액티비티만 있도록 한다. CLEAR_TASK + NEW_TASK 와 유사
+
 ? SingleInstance : 동일한 액티비티는 1개만 있도록 한다. BRING_TO_FRONT 와 유사
 
 ### Fragment 쓰면 장점, 불편한 점
@@ -168,6 +169,7 @@ Activity 가 반환되었다가 re-create 동작이 될 때 Fragment 도 함께 
 ### cp와 직접 db 접근 코드 선택 기준
 
 ContentProvider : 다른 프로세스나 인터페이스를 공유하지 않는 모듈간에 데이터를 교환해야할 때
+
 DB : 같은 앱 - 해당 DB 를 접근할 수 있는 동일한 레벨의 모듈/프로세스간, 다른 앱 - DB 파일의 위치를 명시적으로 알 수 있는 경우
 
 ### db lock이란?
@@ -193,6 +195,7 @@ Crash. BroadcastReceiver 는 UI Thread 에서 동작하지 않기 때문에 명�
 ### SharedPreferences commit()과 apply() 차이
 
 Commit : 동기식, Apply : 비동기식. 
+
 ? SharedPreference 는 파일을 한번 읽은 후 메모리에서 관리하였다가 파일에 다시 저장하는 방식이다. Commit 은 파일에 까지 기록을.. Apply 는 메모리에만 갱신하고 파일에는 어느 시점에 bulk 로...
 
 ### google play service 연결은 어떻게 하는가? 내부 구조
@@ -225,7 +228,7 @@ for (int i = 0; i < 4; i++) {
 }
 ```
 
-???
+??? 아마도 화면이 1초씩 끊기며 업데이트?
 
 ======= 일반 =====
 
@@ -242,6 +245,7 @@ for (int i = 0; i < 4; i++) {
 ### AOP 장단점?
 
 장점 : 공통적인 전처리, 후처리에 대한 처리가 편하다. 
+
 단점 : 설정이 빡세다. 모든 처리에 공통 동작이 추가 되기때문에 성능에 영향을 준다.
 
 ### 스레드풀 AbortPolicy
