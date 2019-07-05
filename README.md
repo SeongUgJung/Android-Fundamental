@@ -1,4 +1,4 @@
-# Android-Fundamental
+﻿# Android-Fundamental
 
 이 글은 네이버의 노재춘 개발자님께서 주신 질문지이며 제 스스로에게 답을 해보고자 만든 답변들입니다.
 
@@ -11,18 +11,55 @@
 ### Binder 개념과 Binder에서 발생 가능한 문제
 
 ? 프로세스간 통신을 위해서 만든 것
+* 모바일 플랫폼에서 기존 Socket 이나 File 입출력을 활용하는 방법보다 더 효율적이고 빠른 프로세스 통신을 위해 만들어짐. 
+프로세스간 통신이기 때문에 Binder를 통해 전달할 수 있는 데이터 크기에 제한이 있음.
+비지니스 로직이 프로세스가 종료되거나 너무 오랜 시간이 걸리는 경우 RemoteException / ANR등이 발생할 수 있음. 
+
+* 리눅스 커널레벨에서 제공하는 IPC 메카니즘
+* 일반적인 IPC 와는 다르게 fd나 shmem같은 OS레벨의 리소스를 공유할 수 있음 
+* 원래는 BeOS에서 사용하던 IPC 메카니즘이었지만, OpenBinder라는 프로젝트로 리눅스에 포팅됨. (핵본 여사님 만만세)
+* Ref
+http://events.linuxfoundation.org/.../abs2013_gargentas.pdf
+http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 ###  Zygote
 
 ? pid 1 을 가진 프로세스로 안드로이드에서 앱의 실행을 관장하는 녀석
+* 안드로이드 모든 앱 프로세스는 공통적으로 사용되는 기능 및 로드되는 라이브러리가 있음. 매번 앱 시작시마다 프로세스를 처음부터 만들어서 필요한 초기 작업을 수행하는데 시간이 오래걸림. 이 부분을 가속화하기 위해 공통적으로 사용되는 기능 및 라이브러리를 로드해둔 모 프로세스를 만듬 - Zygote. 다른 앱 프로세스는 해당 프로세스를 fork (clone)하는 형식으로 생성함.
+안드로이드 Q 버전부터는 Zygote 대신 common process pool을 유지하는 방식으로 변경됨 (fork에 걸리는 시간을 줄여줌). 따라서 Q 이후에는 Zygote가 없어질 예정. 
+
+
+* art runtime 구동에 에 필요한 framrwork의 class및 resource를 preload하고 있는 process
+* ActivityManagerService의 요청에 따라, uid, 각종 sandbox 설정을 구성한 다음 ActivityThread.main 을 수행해, 앱이 재빠르게 구동되게 도와줌
 
 ###  프로세스 우선순위
 
 ? 프로세스와 쓰레드에 우선순위를 부여할 수 있으며 이는 동시성 동작시 우선순위 값에 따라서 우선 동작여부가 결정된다.
 
+**by suribada**
+* 질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다.
+
+  * 답변: 포그라운드/가시적/서비스/백그라운드/빈 프로세스 순서. 빈 프로세스는 캐시 용도로 남아있지만, 가장 먼저 제거될 수 있다.
+  * 프로세스 우선순위 때문에 발생하는 문제도 있다. Activity의 onDestroy가 반드시 불린다는 보장이 없는 이유 가운데 하나다.
+  * 앱 위젯에서 AsyncTask를 써도 안 되기도 한다. 앱 위젯이 업데이트 안 되다가 앱을 실행하고 나면 업데이트 된다고 문의가 들어오게 된다.
+  * 앱 위젯도 BroadcastReceiver라서 onReceive()가 끝나자마자 다른 컴포넌트가 실행되고 있지 않다면 우선순위가 가장 아래로 내려가서 프로세스가 종료될 가능성이 많다.
+  * 즉 앱 위젯에서 비동기 동작을 하려면 다시 서비스에 넘겨서 서비스에서 진행해야만 한다.
+  * 아래 나오는 질문 가운데 BroadcastReceiver에서 Toast를 띄워도 되는가 하는 것도 프로세스 우선순위를 이해하면 된다.
+
+**by huewu**
+* 안드로이드 플랫폼에서 프로세스 해당 프로세스에서 동작하는 앱 컴포넌트가 사용자의 현재 작업과 얼마나 직접적인 연관이 있는가에따라 결정됨. 예를 들어, 사용자가 현재 사용중인 액티비티는 우선 순위가 가장 높고, 아무런 앱 컴포넌트가 동작하지 않는 프로세스(EMPTY_PROCESS)는 가장 낮은 우선순위를 갖음. 
+
+* 프로세스 우선 순위는 크 게 두가지 방식으로 사용됨. 우선, Low Memory Killer가 메모리 확보를 위해 프로세스를 Kill 해야하는 경우, 우선 순위가 낮은 프로세스부터 Kill함. 두 번째로, 플랫폼 동작 구현 시 프로세스 우선 순위에 따라 동작이 변경될 수 있음. 예를 들어, Doze 모드 진입 시, ForegroundService를 갖고있는 프로세스는 Doze 제약을 피할 수 있지만, 그 보다 낮은 우선순위의 프로세스는 Doze 제약을 받게됨.
+
+
 ### Low Memory Killer와 OOM Killer의 차이
 
 ? Low Memory Killer 현재 foreground 어플리케이션이 더 많은 메모리가 필요로 하는 경우 백그라운드의 다른 어플리케이션이나 프로세스를 반환하여 Foreground 앱을 위한 추가적인 메모리를 확보하고자 합니다. 반면 OOM Killer 는 추가적인 메모리 확보가 채 이루어지기 전이거나 더이상 확보할 메모리가 없는 경우에 메모리를 더 할당하는 액션이 발생할 때 해당 프로세스를 종료하도록 합니다.
+
+Low Moemory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
+
+**Ref**
+* https://dalinaum-kr.tumblr.com/.../android-low-memory-killer
 
 ### 프로세스 분리 이유 동작
 
@@ -303,6 +340,7 @@ Leak Canary, Profiler, dumpsys
 앱을 특정 sdk api 에 맞춰서 빌드한다.
 
 질문 의도: compileSdkVersion, minSdkVersion과 구분을 하는가?
+
 답변: 그 버전까지는 호환성 모드를 쓰지 않겠다는 의미다. 호환성 모드는 안드로이드 버전이 올라가더라도 앱의 기존 동작이 바뀌는 것을 방지하기 위한 것이다.
 예를 들어 AsyncTask 병렬 실행이었다가 순차 실행으로 바뀌었는데, targetSdkVersion를 올리지 않으면 
 기존과 동일하다.
@@ -327,6 +365,7 @@ for (int i = 0; i < 4; i++) {
 질문 의도: 문제 있는 코드라는 걸 알고 있는가?
 UI에서 일정 시간 간격으로 UI를 업데이트는 패턴을 알고 있는가?
 
+```
 Runnable updateRunnable = () -> {
     current++;
 	title.setText("current=" + current);
@@ -339,6 +378,7 @@ Runnable updateRunnable = () -> {
 public void onClick(View v) {
 	handler.post(updateRunnable);
 }
+```
 
 답변: 
 메인 스레드를 블로킹 하기 때문에 1초마다 출력이 되지 않는다.
@@ -400,7 +440,6 @@ Scheduler 는 특정 쓰레드를 명시하는 것이며 Worker 는 쓰레드에
 ### subscribeOn/observerOn 차이
 
 subscribeOn 는 해당 스트림의 상위 스트림이 생성되는 시점의 쓰레드를 선언한다. observeOn 는 데이터가 보내진 다음 downstream 이 동작할 쓰레드를 선언한다.
-
 - 통상적으로 `subscribeOn()`, `observerOn()`를 한쌍으로 같이 사용하는데
 `subscribeOn()`는 그 짓을 할 놈의 쓰레드, `observerOn()`는 그 짓의 결과를 받을 놈의 쓰레드정도로 생각할 수 있다.
 - Rx에서 `flatMap()`, `filter()`등의 여러 operator를 활용해서 chaining을 할때 `observerOn()`을 잘 활용해서 쓰레드를 전환시켜서 해당 작업에 맞는 적절한 쓰레드 작업을 시켜주도록 할 수 있다.
