@@ -186,6 +186,17 @@ Activity 가 반환되었다가 re-create 동작이 될 때 Fragment 도 함께 
 ### Service onStartCommand 리턴 값 구분
 
 ? 반환시 자동재실행, 반환시 끝 이 있다.
+- 어떤 값을 return하느냐에 따라서 서비스가 나중에 재시작될때 intent를 어떻게 처리할지 정할 수 있음
+#### START_STICKY 
+- 대부분의 경우에 쓰임
+- 서비스가 종료되고 나서 시작될때 intent는 null로 내려옴
+: 대부분 여기서 intent null처리를 하지 않아서 죽는경우가 발생함
+#### START_NOT_STICKY 
+- 서비스가 죽어도 다시 시작되지 않음
+- 주로 batch작업같은 주기적으로 체크하거나 작업이 도는데 서비스가 죽어도 괜찮은 경우에 사용
+#### START_REDELIVER_INTENT 
+- 서비스가 다시 시작될때 이전에 전달받았던 intent를 다시 가져옴
+- 서비스가 중간에 멈추더라도 처음에 실행했던 작업을 무조건 다시 시작해서 완료해야 하는 경우에 사용
 
 ### Started & Bound Service 언제 쓰이나?
 
