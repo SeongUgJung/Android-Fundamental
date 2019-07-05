@@ -44,6 +44,14 @@
 
 UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간을 소요하게 될 경우 Not Response 로 인한 에러가 발생한다. anr 이 발생한 경우 /data/anr/trace.txt 를 추출하여 어느 쓰레드가 블럭하고 어느 쓰레드가 대기중인지 파악할 수 있다. 일부 기기는 바로 추출이 가능하며 일부 기기는 adb-shell 로 해당 파일을 sdcard 영역으로 복사한 다음 추출할 수 있다.
 
+- Application Not Responding의 줄임말
+- 화면을 터치하고나서 5초안에 응답이 없는경우 발생함
+: BroadcastReceiver의 이슈도 있지만 대부분의 경우는 위의 이유때문
+- 백그라운드로 돌릴법한 무거운 작업을 UI쓰레드에서 돌리는 경우에 발생함
+- 예전에 서버통신을 할때 UI쓰레드에서 돌리면 이런 에러가 발생했었고 AsyncTask를 쓰더라도 제대로 처리해주지 않으면 문제가 발생했었음
+: 요즘에는 친절하게 UI쓰레드에서 하지 말라는 메세지와 함께 에러를 발생시켜줌
+- RxJava, Coroutine에서 쓰레드 스케줄러 관리를 작업에 맞게 잘 전환 시켜줘야 하는 이유이기도 함
+
 ### Looper/Handler/MessageQueue
 
 특정 쓰레드에서 동작하도록 실행할 수 있는 외부 인터페이스로 Handler 가 있으며 이 Handler 는 선언하는 시점에 Thread 에 종속된다. Handler 를 통해 동작하는 Runnable 객체를 전달하면 이는 Message Queue 에 담겨져있다가 Looper 가 Queue 에서 하나씩 객체를 꺼내서 동작하도록 한다.
