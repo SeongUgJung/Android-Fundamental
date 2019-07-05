@@ -1,4 +1,4 @@
-# Android-Fundamental
+﻿# Android-Fundamental
 
 이 글은 네이버의 노재춘 개발자님께서 주신 질문지이며 제 스스로에게 답을 해보고자 만든 답변들들입니다.
 
@@ -25,6 +25,22 @@
 
 ? 프로세스와 쓰레드에 우선순위를 부여할 수 있으며 이는 동시성 동작시 우선순위 값에 따라서 우선 동작여부가 결정된다.
 
+* by suribada
+질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다.
+
+답변: 포그라운드/가시적/서비스/백그라운드/빈 프로세스 순서. 빈 프로세스는 캐시 용도로 남아있지만, 가장 먼저 제거될 수 있다.
+
+프로세스 우선순위 때문에 발생하는 문제도 있다. Activity의 onDestroy가 반드시 불린다는 보장이 없는 이유 가운데 하나다.
+
+앱 위젯에서 AsyncTask를 써도 안 되기도 한다. 앱 위젯이 업데이트 안 되다가 앱을 실행하고 나면 업데이트 된다고 문의가 들어오게 된다.
+
+앱 위젯도 BroadcastReceiver라서 onReceive()가 끝나자마자 다른 컴포넌트가 실행되고 있지 않다면 우선순위가 가장 아래로 내려가서 프로세스가 종료될 가능성이 많다.
+
+즉 앱 위젯에서 비동기 동작을 하려면 다시 서비스에 넘겨서 서비스에서 진행해야만 한다.
+
+아래 나오는 질문 가운데 BroadcastReceiver에서 Toast를 띄워도 되는가 하는 것도 프로세스 우선순위를 이해하면 된다.
+
+* by huewu
 안드로이드 플랫폼에서 프로세스 해당 프로세스에서 동작하는 앱 컴포넌트가 사용자의 현재 작업과 얼마나 직접적인 연관이 있는가에따라 결정됨. 예를 들어, 사용자가 현재 사용중인 액티비티는 우선 순위가 가장 높고, 아무런 앱 컴포넌트가 동작하지 않는 프로세스(EMPTY_PROCESS)는 가장 낮은 우선순위를 갖음. 
 
 프로세스 우선 순위는 크 게 두가지 방식으로 사용됨. 우선, Low Memory Killer가 메모리 확보를 위해 프로세스를 Kill 해야하는 경우, 우선 순위가 낮은 프로세스부터 Kill함. 두 번째로, 플랫폼 동작 구현 시 프로세스 우선 순위에 따라 동작이 변경될 수 있음. 예를 들어, Doze 모드 진입 시, ForegroundService를 갖고있는 프로세스는 Doze 제약을 피할 수 있지만, 그 보다 낮은 우선순위의 프로세스는 Doze 제약을 받게됨.
@@ -240,6 +256,7 @@ Leak Canary, Profiler, dumpsys
 앱을 특정 sdk api 에 맞춰서 빌드한다.
 
 질문 의도: compileSdkVersion, minSdkVersion과 구분을 하는가?
+
 답변: 그 버전까지는 호환성 모드를 쓰지 않겠다는 의미다. 호환성 모드는 안드로이드 버전이 올라가더라도 앱의 기존 동작이 바뀌는 것을 방지하기 위한 것이다.
 예를 들어 AsyncTask 병렬 실행이었다가 순차 실행으로 바뀌었는데, targetSdkVersion를 올리지 않으면 
 기존과 동일하다.
@@ -264,6 +281,7 @@ for (int i = 0; i < 4; i++) {
 질문 의도: 문제 있는 코드라는 걸 알고 있는가?
 UI에서 일정 시간 간격으로 UI를 업데이트는 패턴을 알고 있는가?
 
+```
 Runnable updateRunnable = () -> {
     current++;
 	title.setText("current=" + current);
@@ -276,6 +294,7 @@ Runnable updateRunnable = () -> {
 public void onClick(View v) {
 	handler.post(updateRunnable);
 }
+```
 
 답변: 
 메인 스레드를 블로킹 하기 때문에 1초마다 출력이 되지 않는다.
