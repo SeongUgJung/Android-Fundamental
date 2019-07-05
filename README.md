@@ -265,6 +265,13 @@ BroadcastReceiver에서 Toast도 잘 뜬다.
 
 앱 최초 실행시 필요한 처리 초기화. MultiDex 초기화.
 
+- 앱이 실행되고 있는한 무조건 존재한다고 판단할 수 있는 클래스
+- 대부분 singleton형태로 Application클래스를 활용함
+- context가 필요한경우 Application의 클래스를 활용해서 사용함
+: UI가 필요한 context인 경우는 Application의 context를 사용하면 안됨
+- 여러 화면에서 필요한 변수나 값을 static변수로 선언해서 사용하지 않고 Application의 필드로 선언해서 가져다 사용하게 하는 패턴도 있음
+: 하지만 너무 남용하면 안되므로 추천하지는 않음. repository패턴을 사용하거나 intent등의 다른 우회의 방법으로 데이터를 공유하도록 해야함
+
 ### SharedPreferences commit()과 apply() 차이
 
 Commit : 동기식, Apply : 비동기식. 
