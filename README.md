@@ -112,6 +112,27 @@ A Pause -> A Stop -> B Create -> B Start -> B Resume -> B Pause -> B Stop -> B D
 
 단 B 동작 중 A 가 반환되어 re-create 가 발생한다면 B Stop 후 A Create -> B Destroy 가 된다. (왜냐고 묻는다면 모릅니다. 로그 보면 그렇더군요...)
 
+---
+(ted)
+- 제가 면접에서 꼭 물어보는 질문(많은 사람들이 쉽다고 생각하지만 실제로는 생각한것과는 많이 다르게 움직이는 라이프사이클)
+- `startActivity()`발생시
+```
+[A]onPause
+[B]onCreate
+[B]onStart
+[B]onResume
+[A]onStop
+```
+- 뒤로가기 등으로 B가 종료되는 경우
+```
+[B]onPause
+[A]onRestart
+[A]onStart
+[A]onResume
+[B]onStop
+[B]onDestroy
+```
+
 ### onSaveInstanceState() 실행 시점
 
 onStop 후 호출
