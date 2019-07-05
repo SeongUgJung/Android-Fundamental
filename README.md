@@ -19,8 +19,8 @@
 * 일반적인 IPC 와는 다르게 fd나 shmem같은 OS레벨의 리소스를 공유할 수 있음 
 * 원래는 BeOS에서 사용하던 IPC 메카니즘이었지만, OpenBinder라는 프로젝트로 리눅스에 포팅됨. (핵본 여사님 만만세)
 * Ref
-http://events.linuxfoundation.org/.../abs2013_gargentas.pdf
-http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
+  * http://events.linuxfoundation.org/images/stories/slides/abs2013_gargentas.pdf?fbclid=IwAR0KZcp6U_HbrriTssmzxESjeAwBPXT_BMA-yJJsFlKr2KPM5PS-q_YA5Uc
+  * http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 ###  Zygote
 
@@ -36,7 +36,7 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 ? 프로세스와 쓰레드에 우선순위를 부여할 수 있으며 이는 동시성 동작시 우선순위 값에 따라서 우선 동작여부가 결정된다.
 
-**by suribada**
+**by @suribada**
 * 질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다.
 
   * 답변: 포그라운드/가시적/서비스/백그라운드/빈 프로세스 순서. 빈 프로세스는 캐시 용도로 남아있지만, 가장 먼저 제거될 수 있다.
@@ -46,7 +46,7 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
   * 즉 앱 위젯에서 비동기 동작을 하려면 다시 서비스에 넘겨서 서비스에서 진행해야만 한다.
   * 아래 나오는 질문 가운데 BroadcastReceiver에서 Toast를 띄워도 되는가 하는 것도 프로세스 우선순위를 이해하면 된다.
 
-**by huewu**
+**by @huewu**
 * 안드로이드 플랫폼에서 프로세스 해당 프로세스에서 동작하는 앱 컴포넌트가 사용자의 현재 작업과 얼마나 직접적인 연관이 있는가에따라 결정됨. 예를 들어, 사용자가 현재 사용중인 액티비티는 우선 순위가 가장 높고, 아무런 앱 컴포넌트가 동작하지 않는 프로세스(EMPTY_PROCESS)는 가장 낮은 우선순위를 갖음. 
 
 * 프로세스 우선 순위는 크 게 두가지 방식으로 사용됨. 우선, Low Memory Killer가 메모리 확보를 위해 프로세스를 Kill 해야하는 경우, 우선 순위가 낮은 프로세스부터 Kill함. 두 번째로, 플랫폼 동작 구현 시 프로세스 우선 순위에 따라 동작이 변경될 수 있음. 예를 들어, Doze 모드 진입 시, ForegroundService를 갖고있는 프로세스는 Doze 제약을 피할 수 있지만, 그 보다 낮은 우선순위의 프로세스는 Doze 제약을 받게됨.
@@ -55,18 +55,18 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 ? Low Memory Killer 현재 foreground 어플리케이션이 더 많은 메모리가 필요로 하는 경우 백그라운드의 다른 어플리케이션이나 프로세스를 반환하여 Foreground 앱을 위한 추가적인 메모리를 확보하고자 합니다. 반면 OOM Killer 는 추가적인 메모리 확보가 채 이루어지기 전이거나 더이상 확보할 메모리가 없는 경우에 메모리를 더 할당하는 액션이 발생할 때 해당 프로세스를 종료하도록 합니다.
 
-**by huewu**
+**by @huewu**
 * Low Moemory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
 
 **Ref**
-* https://dalinaum-kr.tumblr.com/.../android-low-memory-killer
+* https://dalinaum-kr.tumblr.com/post/4528344482/android-low-memory-killer?fbclid=IwAR2m19gh77o9gcX62OFLBNpvJaUWhuG_YRO49poJvKJ9ZJtKXNE5ezGyNbI
 
 ### 프로세스 분리 이유 동작
 
 ? 주로 상주 서비스 어플리케이션을 선언할 때 많이 이용된다. 상주 서비스는 그 특성상 메모리를 장기간 점유하는데 메인 앱에 종속된 프로세스로 선언하게 되면 메인 앱과 컴퓨팅 자원을 공유하기 때문에 서비스가 의도적이지 않은 상황에 종료할 상황이 매우 빈번하게 발생한다. 이런 경우 별도의 프로세스로 선언하여 적은 메모리로 별도로 동작하도록 한다. 다만 이경우 Preference 등 내부 인터페이스로 멀티 프로세스를 지원하지 않는 자원을 공유하려 할 경우 서로간에 다른 데이터를 공유할 수 있기 때문에 영속성 데이터는 ContentProvider 를 통해서 자원을 공유하는 것이 좋다.
 
-**by huewu**
-* 대표적으로 음악 재생을 위한 포그라운드 서비슬르 별도의 프로세스로 분리하는 경우가 많음 (추천됨). 만일 음악 앱이 하나의 프로세스로 이루어져있다면, 다음과 같은 단점이 발생함 
+**by @huewu**
+* 대표적으로 음악 재생을 위한 포그라운드 서비스를 별도의 프로세스로 분리하는 경우가 많음 (추천됨). 만일 음악 앱이 하나의 프로세스로 이루어져있다면, 다음과 같은 단점이 발생함 
   * UI 상의 오류 혹은 메모리 부족으로 앱 종료 혹은 재시작시 재생중인 음악이 끊길 수 있음. 
   * 사용자가 백그라운드 음악 재생을 위해 앱을 사용하는 경우에도 앱 UI에 관련된 코드들도 모두 메모리에 상주되어 있어야함. 불필요하게 시스템 메모리를 사용하게 됨. 
 
@@ -79,7 +79,7 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 ???
 
-**by huewu**
+**by @huewu**
 * ?Application Main Thread. 
 
 ### ActivityThread와 ActivityManagerService간의 통신
@@ -91,10 +91,10 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간을 소요하게 될 경우 Not Response 로 인한 에러가 발생한다. anr 이 발생한 경우 /data/anr/trace.txt 를 추출하여 어느 쓰레드가 블럭하고 어느 쓰레드가 대기중인지 파악할 수 있다. 일부 기기는 바로 추출이 가능하며 일부 기기는 adb-shell 로 해당 파일을 sdcard 영역으로 복사한 다음 추출할 수 있다.
 
 
-**by huewu**
+**by @huewu**
 * Main Thread는 메시지 Queue 형식으로 동작. 해당 Queue에서 일정 시간내에 작업이 완료되지 않으면 ANR이 발생함. ANR이 발생하는 기준은 Main Thread에서 동작하고 있는 Application Component에 따라 조금씩 달라짐. 예를들어 Activity의 경우 5초. Broadcast Receiver의 경우 조금 더 긴 경우가 많음 (10초)
 
-**by ted**
+**by @ted**
 - Application Not Responding의 줄임말
 - 화면을 터치하고나서 5초안에 응답이 없는경우 발생함
 : BroadcastReceiver의 이슈도 있지만 대부분의 경우는 위의 이유때문
@@ -116,13 +116,13 @@ Thread 당 1개
 
 ? Message 가 Handler 에 종속되었음을 선언하기 위함
 
-**by huewu**
+**by @huewu**
 * 모든 UI Event 및 대부분의 System 상호작용은 Message 형태로 처리됨. 따라서, Message Ojbect는 매우 많이 그리고 자주 사용됨. 이 때 매번 작은 오브젝트를 생성하고 삭제하면 시스템 성능에 악영향을 줄 수 있음. 따라서 너무 빈번한 Message object 생성 및 삭제를 방지하기 위해, Object Pool 형태를 유지해 Message object를 재활용.
 
 ###  pool의 개수
 ???
 
-**by huewu**
+**by @huewu**
 * Application Process당 1개? 
 
 ###  pool은 어디에 어떤 형태로?
@@ -132,7 +132,7 @@ Thread 당 1개
 
 일반적인 용도는 Background Thread 에서 UI Thread 로 동작을 전환하고자 할때 Handler 가 메세지를 받아서 처리하도록 한다.
 
-**by huewu**
+**by @huewu**
 * LooperThread에 연결된 Looper로 Message를 전달하고 (sendMessage), 전달된 Message를 처리하는 역할(handleMessage). 또한 Messenger 형태로 감싼 후 다른 Process로 전달되어 IPC 채널을 만드는데도 사용될 수 있다.
 
 ### ViewParent, getParent
@@ -161,7 +161,7 @@ ICS 이전의 경우 AsyncTask 가 버전별로 ThreadPool 관리, 동시성 다
 
 ???
 
-**by huewu**
+**by @huewu**
 * Message를 처리할 수 있는 Looper가 있는 Thread?
 
 
@@ -354,7 +354,7 @@ Commit : 동기식, Apply : 비동기식.
 - Parcelable로 만드려면 귀찮은 작업을 해주어야 하지만 안드로이드 스튜디오의 플러그인에서 코드를 알아서 만들어 주는게 있어서 편함
 : kotlin을 사용한다면 @Parcelize 를 붙여주면서 엄청 간단하게 Parcelable처리 가능
 - 안드로이드 모두 Parcelable, Serializable를 사용할 수 있지만 Parcelable의 속도가 훨씬 빠름
-<img src="https://cdn-images-1.medium.com/max/800/1*d4iAcVhmfIrbGR4c0yqCvw.png">
+![benchmark of parcel and serial](./art/benchmark_parcel_serial.png)
 - 개인적으로 안드로이드에서 Parcelable안쓰고 Serializable을 사용하는 코드를 극혐
 
 ### 메모리릭 확인하는 방법
