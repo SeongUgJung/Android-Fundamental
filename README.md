@@ -170,6 +170,11 @@ Activity 가 반환되었다가 re-create 동작이 될 때 Fragment 도 함께 
 
 생성자를 override 해서 할 경우 restore 동작시 특정 값이 유실될 수 있다. 그래서 생성자는 override 해서는 안되며 Extra 형태로 값을 추가해서 restore 시에서 해당 값이 복원된 상태에서 처리될 수 있도록 해야한다.
 
+- Fragment가 여러가지 이유에서 새로 만들어지는 경우 무조건 기본 생성자가 호출됨
+: XXXFragment의 생성자에 userId를 넘기도록 만들었어도 XXXFragment의 기본생성자가 불림
+- 그러므로 정적 메서드를 활용해서 기본 생성자를 만들고 bundle에 argument를 넘기는 방식으로 만들어야함
+- 통상적으로 정적 메서드 이름은 `newInstance()`로 만들어서 사용함
+
 ### 서비스는 언제 사용?
 
 기본 용도는 백그운드 동작을 위해 쓰여지며 단발성인 경우 IntentService 를 사용 할 수 있다. 내부에서 Queue 를 관리하기 때문에 Download 처리나 특정 프로세싱 등을 위한 처리로 이용할 수 있다. 장시간 머무르며 동작해야하는 경우 Service 를 사용하면 된다. 주로 TCP 연결 후 서버와 데이터 처리시 많이 사용하였다.
