@@ -400,3 +400,7 @@ Scheduler 는 특정 쓰레드를 명시하는 것이며 Worker 는 쓰레드에
 ### subscribeOn/observerOn 차이
 
 subscribeOn 는 해당 스트림의 상위 스트림이 생성되는 시점의 쓰레드를 선언한다. observeOn 는 데이터가 보내진 다음 downstream 이 동작할 쓰레드를 선언한다.
+
+- 통상적으로 `subscribeOn()`, `observerOn()`를 한쌍으로 같이 사용하는데
+`subscribeOn()`는 그 짓을 할 놈의 쓰레드, `observerOn()`는 그 짓의 결과를 받을 놈의 쓰레드정도로 생각할 수 있다.
+- Rx에서 `flatMap()`, `filter()`등의 여러 operator를 활용해서 chaining을 할때 `observerOn()`을 잘 활용해서 쓰레드를 전환시켜서 해당 작업에 맞는 적절한 쓰레드 작업을 시켜주도록 할 수 있다.
