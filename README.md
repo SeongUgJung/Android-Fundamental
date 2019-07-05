@@ -115,7 +115,19 @@ A Pause -> A Stop -> B Create -> B Start -> B Resume -> B Pause -> B Stop -> B D
 ### onSaveInstanceState() 실행 시점
 
 onStop 후 호출
-
+- Activity가 여러 이유(Orientation이 바뀌는 경우, 백그라운드에 있다가 종료되어야 하는 경우 등)로 상태값을 저장해야하는 경우에 호출됨
+- 저장될때는 `onSaveInstanceState()`, 다시 불러올때는 `onRestoreInstanceState()`가 호출됨
+- 통상적으로 onCreate()에서 아래와 같은 경우에 따라 다른 분기처리를 함
+```
+- savedInstanceState != null: 이전에 어떠한 이유로 상태가 저장된 경우가 있으므로 savedInstanceState로부터 값을 가져옴
+- Intent.ACTION_VIEW == intent.action: 딥링크를 통해 화면이 시작되었으므로 getQueryParameter()를 통해 값을 가져옴
+- 그외: startActivity()를 통해 화면이 실행되었으므로 intent로 부터 값을 가져옴
+```
+- savedInstanceState처리가 잘 되는지 테스트하는 방법
+```
+- 가로/세로 orientation을 바꿔가면서 테스트
+- [개발자 옵션]-[백그라운드 프로세스 수 제한]-[백그라운드 프로세스 없음]설정
+```
 ### taskAffinity 동작
 
 ???
