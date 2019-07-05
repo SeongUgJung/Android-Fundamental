@@ -1,6 +1,6 @@
 ﻿# Android-Fundamental
 
-이 글은 네이버의 노재춘 개발자님께서 주신 질문지이며 제 스스로에게 답을 해보고자 만든 답변들들입니다.
+이 글은 네이버의 노재춘 개발자님께서 주신 질문지이며 제 스스로에게 답을 해보고자 만든 답변들입니다.
 
 ## Disclaimer
 ```
@@ -90,8 +90,19 @@ http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
 UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간을 소요하게 될 경우 Not Response 로 인한 에러가 발생한다. anr 이 발생한 경우 /data/anr/trace.txt 를 추출하여 어느 쓰레드가 블럭하고 어느 쓰레드가 대기중인지 파악할 수 있다. 일부 기기는 바로 추출이 가능하며 일부 기기는 adb-shell 로 해당 파일을 sdcard 영역으로 복사한 다음 추출할 수 있다.
 
+
 **by huewu**
 * Main Thread는 메시지 Queue 형식으로 동작. 해당 Queue에서 일정 시간내에 작업이 완료되지 않으면 ANR이 발생함. ANR이 발생하는 기준은 Main Thread에서 동작하고 있는 Application Component에 따라 조금씩 달라짐. 예를들어 Activity의 경우 5초. Broadcast Receiver의 경우 조금 더 긴 경우가 많음 (10초)
+
+**by ted**
+- Application Not Responding의 줄임말
+- 화면을 터치하고나서 5초안에 응답이 없는경우 발생함
+: BroadcastReceiver의 이슈도 있지만 대부분의 경우는 위의 이유때문
+- 백그라운드로 돌릴법한 무거운 작업을 UI쓰레드에서 돌리는 경우에 발생함
+- 예전에 서버통신을 할때 UI쓰레드에서 돌리면 이런 에러가 발생했었고 AsyncTask를 쓰더라도 제대로 처리해주지 않으면 문제가 발생했었음
+: 요즘에는 친절하게 UI쓰레드에서 하지 말라는 메세지와 함께 에러를 발생시켜줌
+- RxJava, Coroutine에서 쓰레드 스케줄러 관리를 작업에 맞게 잘 전환 시켜줘야 하는 이유이기도 함
+
 
 ### Looper/Handler/MessageQueue
 
@@ -172,13 +183,49 @@ A Pause -> A Stop -> B Create -> B Start -> B Resume -> B Pause -> B Stop -> B D
 
 단 B 동작 중 A 가 반환되어 re-create 가 발생한다면 B Stop 후 A Create -> B Destroy 가 된다. (왜냐고 묻는다면 모릅니다. 로그 보면 그렇더군요...)
 
+---
+(ted)
+- 제가 면접에서 꼭 물어보는 질문(많은 사람들이 쉽다고 생각하지만 실제로는 생각한것과는 많이 다르게 움직이는 라이프사이클)
+- `startActivity()`발생시
+```
+[A]onPause
+[B]onCreate
+[B]onStart
+[B]onResume
+[A]onStop
+```
+- 뒤로가기 등으로 B가 종료되는 경우
+```
+[B]onPause
+[A]onRestart
+[A]onStart
+[A]onResume
+[B]onStop
+[B]onDestroy
+```
+
 ### onSaveInstanceState() 실행 시점
 
 onStop 후 호출
-
+- Activity가 여러 이유(Orientation이 바뀌는 경우, 백그라운드에 있다가 종료되어야 하는 경우 등)로 상태값을 저장해야하는 경우에 호출됨
+- 저장될때는 `onSaveInstanceState()`, 다시 불러올때는 `onRestoreInstanceState()`가 호출됨
+- 통상적으로 onCreate()에서 아래와 같은 경우에 따라 다른 분기처리를 함
+```
+- savedInstanceState != null: 이전에 어떠한 이유로 상태가 저장된 경우가 있으므로 savedInstanceState로부터 값을 가져옴
+- Intent.ACTION_VIEW == intent.action: 딥링크를 통해 화면이 시작되었으므로 getQueryParameter()를 통해 값을 가져옴
+- 그외: startActivity()를 통해 화면이 실행되었으므로 intent로 부터 값을 가져옴
+```
+- savedInstanceState처리가 잘 되는지 테스트하는 방법
+```
+- 가로/세로 orientation을 바꿔가면서 테스트
+- [개발자 옵션]-[백그라운드 프로세스 수 제한]-[백그라운드 프로세스 없음]설정
+```
 ### taskAffinity 동작
-
-???
+- 스파이더맨에 나오는 MCU세계관 멀티버스와 비슷한 개념으로 생각하면 편함
+- 기본적으로 앱안의 모든 Activity들은 같은 taskAffinity를 가짐
+- Manifest에서 activity의 taskAffinity를 개별로 지정해줄수 있음
+- 예를들어 A,B Activity가 같은 taskAffinity를 가지면 A가 백그라운드에 있다가 B가 실행되면 A도 같이 실행되지만, 다른 taskAffinity를 갖는다면 A가 백그라운드인 상태에서 B가 실행되도 A는 여전히 백그라운드에 존재함
+: [삼성 '스마트매니저' 푸시알림 차단이슈 대응하기](https://gun0912.tistory.com/64)에서 사용된 taskAffinity 참고
 
 ### singleTask, singleInstance 차이
 
@@ -194,6 +241,11 @@ Activity 가 반환되었다가 re-create 동작이 될 때 Fragment 도 함께 
 
 생성자를 override 해서 할 경우 restore 동작시 특정 값이 유실될 수 있다. 그래서 생성자는 override 해서는 안되며 Extra 형태로 값을 추가해서 restore 시에서 해당 값이 복원된 상태에서 처리될 수 있도록 해야한다.
 
+- Fragment가 여러가지 이유에서 새로 만들어지는 경우 무조건 기본 생성자가 호출됨
+: XXXFragment의 생성자에 userId를 넘기도록 만들었어도 XXXFragment의 기본생성자가 불림
+- 그러므로 정적 메서드를 활용해서 기본 생성자를 만들고 bundle에 argument를 넘기는 방식으로 만들어야함
+- 통상적으로 정적 메서드 이름은 `newInstance()`로 만들어서 사용함
+
 ### 서비스는 언제 사용?
 
 기본 용도는 백그운드 동작을 위해 쓰여지며 단발성인 경우 IntentService 를 사용 할 수 있다. 내부에서 Queue 를 관리하기 때문에 Download 처리나 특정 프로세싱 등을 위한 처리로 이용할 수 있다. 장시간 머무르며 동작해야하는 경우 Service 를 사용하면 된다. 주로 TCP 연결 후 서버와 데이터 처리시 많이 사용하였다.
@@ -205,6 +257,17 @@ Activity 가 반환되었다가 re-create 동작이 될 때 Fragment 도 함께 
 ### Service onStartCommand 리턴 값 구분
 
 ? 반환시 자동재실행, 반환시 끝 이 있다.
+- 어떤 값을 return하느냐에 따라서 서비스가 나중에 재시작될때 intent를 어떻게 처리할지 정할 수 있음
+#### START_STICKY 
+- 대부분의 경우에 쓰임
+- 서비스가 종료되고 나서 시작될때 intent는 null로 내려옴
+: 대부분 여기서 intent null처리를 하지 않아서 죽는경우가 발생함
+#### START_NOT_STICKY 
+- 서비스가 죽어도 다시 시작되지 않음
+- 주로 batch작업같은 주기적으로 체크하거나 작업이 도는데 서비스가 죽어도 괜찮은 경우에 사용
+#### START_REDELIVER_INTENT 
+- 서비스가 다시 시작될때 이전에 전달받았던 intent를 다시 가져옴
+- 서비스가 중간에 멈추더라도 처음에 실행했던 작업을 무조건 다시 시작해서 완료해야 하는 경우에 사용
 
 ### Started & Bound Service 언제 쓰이나?
 
@@ -265,6 +328,13 @@ BroadcastReceiver에서 Toast도 잘 뜬다.
 
 앱 최초 실행시 필요한 처리 초기화. MultiDex 초기화.
 
+- 앱이 실행되고 있는한 무조건 존재한다고 판단할 수 있는 클래스
+- 대부분 singleton형태로 Application클래스를 활용함
+- context가 필요한경우 Application의 클래스를 활용해서 사용함
+: UI가 필요한 context인 경우는 Application의 context를 사용하면 안됨
+- 여러 화면에서 필요한 변수나 값을 static변수로 선언해서 사용하지 않고 Application의 필드로 선언해서 가져다 사용하게 하는 패턴도 있음
+: 하지만 너무 남용하면 안되므로 추천하지는 않음. repository패턴을 사용하거나 intent등의 다른 우회의 방법으로 데이터를 공유하도록 해야함
+
 ### SharedPreferences commit()과 apply() 차이
 
 Commit : 동기식, Apply : 비동기식. 
@@ -278,6 +348,14 @@ Commit : 동기식, Apply : 비동기식.
 ### Parcelable/Serializable 차이
 
 ??? Parcel 은 Android 에 필요한 몇가지 처리가 더 되어 있다고 한다. 또한 Intent 에 담아서 전달할 때 Serializable 보다 더 가볍다고 한다.
+
+- Serializable은 Java에서, Parcelable은 안드로이드에서 추가된 개념
+- Serializable로 만드는건 Serializable을 implements만 해주는 코드를 넣으면 되서 엄청 간단하지만 refelection을 사용하기 때문에 무거움
+- Parcelable로 만드려면 귀찮은 작업을 해주어야 하지만 안드로이드 스튜디오의 플러그인에서 코드를 알아서 만들어 주는게 있어서 편함
+: kotlin을 사용한다면 @Parcelize 를 붙여주면서 엄청 간단하게 Parcelable처리 가능
+- 안드로이드 모두 Parcelable, Serializable를 사용할 수 있지만 Parcelable의 속도가 훨씬 빠름
+<img src="https://cdn-images-1.medium.com/max/800/1*d4iAcVhmfIrbGR4c0yqCvw.png">
+- 개인적으로 안드로이드에서 Parcelable안쓰고 Serializable을 사용하는 코드를 극혐
 
 ### 메모리릭 확인하는 방법
 
@@ -388,3 +466,6 @@ Scheduler 는 특정 쓰레드를 명시하는 것이며 Worker 는 쓰레드에
 ### subscribeOn/observerOn 차이
 
 subscribeOn 는 해당 스트림의 상위 스트림이 생성되는 시점의 쓰레드를 선언한다. observeOn 는 데이터가 보내진 다음 downstream 이 동작할 쓰레드를 선언한다.
+- 통상적으로 `subscribeOn()`, `observerOn()`를 한쌍으로 같이 사용하는데
+`subscribeOn()`는 그 짓을 할 놈의 쓰레드, `observerOn()`는 그 짓의 결과를 받을 놈의 쓰레드정도로 생각할 수 있다.
+- Rx에서 `flatMap()`, `filter()`등의 여러 operator를 활용해서 chaining을 할때 `observerOn()`을 잘 활용해서 쓰레드를 전환시켜서 해당 작업에 맞는 적절한 쓰레드 작업을 시켜주도록 할 수 있다.
