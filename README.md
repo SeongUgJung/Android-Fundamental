@@ -286,6 +286,14 @@ Commit : 동기식, Apply : 비동기식.
 
 ??? Parcel 은 Android 에 필요한 몇가지 처리가 더 되어 있다고 한다. 또한 Intent 에 담아서 전달할 때 Serializable 보다 더 가볍다고 한다.
 
+- Serializable은 Java에서, Parcelable은 안드로이드에서 추가된 개념
+- Serializable로 만드는건 Serializable을 implements만 해주는 코드를 넣으면 되서 엄청 간단하지만 refelection을 사용하기 때문에 무거움
+- Parcelable로 만드려면 귀찮은 작업을 해주어야 하지만 안드로이드 스튜디오의 플러그인에서 코드를 알아서 만들어 주는게 있어서 편함
+: kotlin을 사용한다면 @Parcelize 를 붙여주면서 엄청 간단하게 Parcelable처리 가능
+- 안드로이드 모두 Parcelable, Serializable를 사용할 수 있지만 Parcelable의 속도가 훨씬 빠름
+<img src="https://cdn-images-1.medium.com/max/800/1*d4iAcVhmfIrbGR4c0yqCvw.png">
+- 개인적으로 안드로이드에서 Parcelable안쓰고 Serializable을 사용하는 코드를 극혐
+
 ### 메모리릭 확인하는 방법
 
 Leak Canary, Profiler, dumpsys
