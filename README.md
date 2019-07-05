@@ -129,8 +129,11 @@ onStop 후 호출
 - [개발자 옵션]-[백그라운드 프로세스 수 제한]-[백그라운드 프로세스 없음]설정
 ```
 ### taskAffinity 동작
-
-???
+- 스파이더맨에 나오는 MCU세계관 멀티버스와 비슷한 개념으로 생각하면 편함
+- 기본적으로 앱안의 모든 Activity들은 같은 taskAffinity를 가짐
+- Manifest에서 activity의 taskAffinity를 개별로 지정해줄수 있음
+- 예를들어 A,B Activity가 같은 taskAffinity를 가지면 A가 백그라운드에 있다가 B가 실행되면 A도 같이 실행되지만, 다른 taskAffinity를 갖는다면 A가 백그라운드인 상태에서 B가 실행되도 A는 여전히 백그라운드에 존재함
+: [삼성 '스마트매니저' 푸시알림 차단이슈 대응하기](https://gun0912.tistory.com/64)에서 사용된 taskAffinity 참고
 
 ### singleTask, singleInstance 차이
 
