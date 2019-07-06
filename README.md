@@ -22,6 +22,14 @@
   * http://events.linuxfoundation.org/images/stories/slides/abs2013_gargentas.pdf?fbclid=IwAR0KZcp6U_HbrriTssmzxESjeAwBPXT_BMA-yJJsFlKr2KPM5PS-q_YA5Uc
   * http://www.angryredplanet.com/~hackbod/openbinder/docs/html/
 
+**by @suribada**
+질문 의도: 프로세스 간 통신에 대한 개념이 있는가? 그리고 개발하면서 Binder라는 걸 고려할 때가 있는가?
+
+답변: (위 답변에 더해서) 앱은 각각 별도 프로세스이지만, 데이터를 서로 주고 받을 때가 있다. 이때 Binder가 사용된다. 
+프로세스 간 통신은 대표적으로 ContentProvider나 Aidl을 사용한 Remote 서비스가 있다.
+Binder를 통한 데이터 크기 제한이 있고, 대표적인 것으로 Bitmap을 직접 전달하면 에러가 발생할 수 있어서 Uri만 전달하는 경우가 있다.
+
+
 ###  Zygote
 
 ? pid 1 을 가진 프로세스로 안드로이드에서 앱의 실행을 관장하는 녀석
@@ -32,12 +40,15 @@
 * art runtime 구동에 에 필요한 framrwork의 class및 resource를 preload하고 있는 process
 * ActivityManagerService의 요청에 따라, uid, 각종 sandbox 설정을 구성한 다음 ActivityThread.main 을 수행해, 앱이 재빠르게 구동되게 도와줌
 
+**by @suribada**
+질문 의도: fork로 앱이 새로 만들어지는 것과, 안드로이드의 부팅 시 메커니즘을 보았는지
+
 ###  프로세스 우선순위
 
 ? 프로세스와 쓰레드에 우선순위를 부여할 수 있으며 이는 동시성 동작시 우선순위 값에 따라서 우선 동작여부가 결정된다.
 
 **by @suribada**
-* 질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다.
+* 질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다. 그리고 앱의 문제에서 해결하기 어려운 문제들이 프로세스 우선순위를 이해하면 해결이 쉬워지기도 한다.
 
   * 답변: 포그라운드/가시적/서비스/백그라운드/빈 프로세스 순서. 빈 프로세스는 캐시 용도로 남아있지만, 가장 먼저 제거될 수 있다.
   * 프로세스 우선순위 때문에 발생하는 문제도 있다. Activity의 onDestroy가 반드시 불린다는 보장이 없는 이유 가운데 하나다.
@@ -56,10 +67,17 @@
 ? Low Memory Killer 현재 foreground 어플리케이션이 더 많은 메모리가 필요로 하는 경우 백그라운드의 다른 어플리케이션이나 프로세스를 반환하여 Foreground 앱을 위한 추가적인 메모리를 확보하고자 합니다. 반면 OOM Killer 는 추가적인 메모리 확보가 채 이루어지기 전이거나 더이상 확보할 메모리가 없는 경우에 메모리를 더 할당하는 액션이 발생할 때 해당 프로세스를 종료하도록 합니다.
 
 **by @huewu**
-* Low Moemory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
+* Low Momory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
 
 **Ref**
 * https://dalinaum-kr.tumblr.com/post/4528344482/android-low-memory-killer?fbclid=IwAR2m19gh77o9gcX62OFLBNpvJaUWhuG_YRO49poJvKJ9ZJtKXNE5ezGyNbI
+
+**by @suribada**
+질문 의도: 프로세스 우선 순위가 내부적으로 어떻게 동작하는지 이해하는 것과, OOM Killer와 왜 구분되는지
+
+답변: (위 답변에 더해서) OOM Killer 동작하기 이전에 Low Memory Killer가 동작한다. 
+OOM Killer는 주 동작이 메모리를 많이 사용하는 것을 종료시키는데, Low Memory Killer가 우선순위에 따라 메모리를 줄이는 노력을 먼저 하고 도저히 안 될 때 OOM Killer가 동작한다.
+
 
 ### 프로세스 분리 이유 동작
 
@@ -70,14 +88,33 @@
   * UI 상의 오류 혹은 메모리 부족으로 앱 종료 혹은 재시작시 재생중인 음악이 끊길 수 있음. 
   * 사용자가 백그라운드 음악 재생을 위해 앱을 사용하는 경우에도 앱 UI에 관련된 코드들도 모두 메모리에 상주되어 있어야함. 불필요하게 시스템 메모리를 사용하게 됨. 
 
+**by @suribada**
+질문 의도: 프로세스 분리를 해본 적이 있는가? 불필요하게 프로세스를 분리한 건 아닌가?
+
+답변: (위 답변에 더해서) 앱은 사용 가능한 메모리 제한이 있다.
 
 ### Http Call 방법(library?)
 
 초창기에는 Java 의 기본 http api 인 HttpClient 를 많이 사용하였으나 현재는 OkHttp 가 널리 통용되고 있다. OkHttp 는 저수준의 구현체이기 때문에 고레벨의 구현체로 Retrofit 을 많이 사용한다. Retrofit 은 기본동작이 비동기성이며 각 단계별로 다양한 Interface 를 지원하기 때문에 일반적인 Http 를 쉽게 구현할 수 있는 장점이 있다.
 
+**by @suribada**
+질문 의도: 예전 방식으로 여전히 하고 있는지 정도를 파악하기 위한 것이다.
+Apache HttpClient를 사용하고 있다면 왜 아직 사용하는지 문제는 무엇인지(왜 deprecated 되었는지도..
+Apache HttpClient가 하위 호환성이 거의 고려되지 않고 만들어짐),
+HttpUrlConnection을 사용하고 있다면 왜 사용하는지 번거로운 점이 무엇인지,
+Retrofit을 사용하고 있다면 RxJava까지 함께 사용하는지(기왕 Retrofit를 사용한다면 RxJava를 쓰는게 
+단순해짐),
+다른 라이브러리를 사용한다면 왜 사용하는지 알려는 것이다.
+
 ### ActivityThread
 
-???
+**by @suribada**
+질문 의도: Call Stack의 가장 아래에 있는 ActivityThread를 살펴봤는지 알아본다.
+크래시가 발생할 때도 자주 보게 된다.
+
+답변: main 메서드가 있는 애플리케이션 시작점이다. 
+메인 루퍼가 생성되고 메인 스레드 이벤트 큐가 여기서 동작하면서 컴포넌트의 생명주기 메서드가 실행된다.
+그리고 system_server 프로세스의 ActivityManagerService와의 통신도 담당한다.
 
 **by @huewu**
 * ?Application Main Thread. 
@@ -85,6 +122,11 @@
 ### ActivityThread와 ActivityManagerService간의 통신
 
 ??? 아마도...RPC 통신? AOSP 코드 뜯어본 기억에는 AIDL 을 이용한 RPC 통신이다. 과거 이 AIDL 을 스내핑 해서 기기의 전체 앱 Lifecycle 을 모니터하는 서비스를 만든 적이 있다.
+
+**by @suribada**
+질문 의도: 외부 프로세스인 system_server와 통신하는 방법이 무엇인지 확인해보았는지..
+
+답변: aidl로 생성한 건 아니고 ApplicationThread라는 Stub 구현이 있어서 sytem_server에서 메서드를 호출한다.
 
 ### ANR
 
@@ -103,14 +145,27 @@ UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간�
 : 요즘에는 친절하게 UI쓰레드에서 하지 말라는 메세지와 함께 에러를 발생시켜줌
 - RxJava, Coroutine에서 쓰레드 스케줄러 관리를 작업에 맞게 잘 전환 시켜줘야 하는 이유이기도 함
 
+**by @suribada**
+질문 의도: ANR을 모호하게 이해하는지 확인한다. 
+
+답변: (위 답변에 더해서) 명시적으로(AsyncTask, IntentService 등을 포함해서) 스레드를 사용하지 않으면, 기본은 모두 메인 스레드를 점유하는 동작이다. Service도 백그라운드에서 실행된다고 해서(UI가 아니라는 의미일 뿐인데..) 백그라운드 스레드로 오해할 수 있지만 스레드 생성하지 않는다면 onStartCommand()는 메인 스레드에서 동작한다. 이때문에 Activity의 동작이 멈출 수도 있다. 따라서 다른 컴포넌트 때문에 ANR이 생길 수도 있다.
 
 ### Looper/Handler/MessageQueue
 
 특정 쓰레드에서 동작하도록 실행할 수 있는 외부 인터페이스로 Handler 가 있으며 이 Handler 는 선언하는 시점에 Thread 에 종속된다. Handler 를 통해 동작하는 Runnable 객체를 전달하면 이는 Message Queue 에 담겨져있다가 Looper 가 Queue 에서 하나씩 객체를 꺼내서 동작하도록 한다.
 
+**by @suribada**
+질문 의도: 모든 것은 MessageQueue를 거친다는  
+
 ### Looper는 몇 개?
 
 Thread 당 1개
+
+**by @suribada**
+질문 의도: Thread Local Storage에 Looper가 저장되는지 이해하는가?
+
+답변: 메인 Looper는  앱이 처음 구동되면서 ActivityThread에서 생성해두고 메인 스레드의 이벤트 큐 역할을 한다. 다른 스레드에서는 Looper.prepare()로 Thread Local Storage()
+
 
 ### Message object pool, Message.obtain 쓰는 이유.
 
@@ -119,7 +174,7 @@ Thread 당 1개
 **by @huewu**
 * 모든 UI Event 및 대부분의 System 상호작용은 Message 형태로 처리됨. 따라서, Message Ojbect는 매우 많이 그리고 자주 사용됨. 이 때 매번 작은 오브젝트를 생성하고 삭제하면 시스템 성능에 악영향을 줄 수 있음. 따라서 너무 빈번한 Message object 생성 및 삭제를 방지하기 위해, Object Pool 형태를 유지해 Message object를 재활용.
 
-###  pool의 개수
+###  message pool의 개수
 ???
 
 **by @huewu**
@@ -344,6 +399,7 @@ Commit : 동기식, Apply : 비동기식.
 ### google play service 연결은 어떻게 하는가? 내부 구조
 
 ???
+
 
 ### Parcelable/Serializable 차이
 
