@@ -41,13 +41,12 @@ Binder를 통한 데이터 크기 제한이 있고, 대표적인 것으로 Bitma
 * ActivityManagerService의 요청에 따라, uid, 각종 sandbox 설정을 구성한 다음 ActivityThread.main 을 수행해, 앱이 재빠르게 구동되게 도와줌
 
 **by @suribada**
-질문 의도: fork로 앱이 새로 만들어지는 것과, 안드로이드의 부팅 시 메커니즘을 보았는지
+질문 의도: fork로 앱이 새로 만들어지는 것과, 안드로이드의 부팅 시 메커니즘을 보았는가?
 
 ###  프로세스 우선순위
 
 ? 프로세스와 쓰레드에 우선순위를 부여할 수 있으며 이는 동시성 동작시 우선순위 값에 따라서 우선 동작여부가 결정된다.
 
-<<<<<<< HEAD
 **by @suribada**
 * 질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다. 그리고 앱의 문제에서 해결하기 어려운 문제들이 프로세스 우선순위를 이해하면 해결이 쉬워지기도 한다.
 
@@ -62,16 +61,6 @@ Binder를 통한 데이터 크기 제한이 있고, 대표적인 것으로 Bitma
 * 안드로이드 플랫폼에서 프로세스 해당 프로세스에서 동작하는 앱 컴포넌트가 사용자의 현재 작업과 얼마나 직접적인 연관이 있는가에따라 결정됨. 예를 들어, 사용자가 현재 사용중인 액티비티는 우선 순위가 가장 높고, 아무런 앱 컴포넌트가 동작하지 않는 프로세스(EMPTY_PROCESS)는 가장 낮은 우선순위를 갖음. 
 
 * 프로세스 우선 순위는 크 게 두가지 방식으로 사용됨. 우선, Low Memory Killer가 메모리 확보를 위해 프로세스를 Kill 해야하는 경우, 우선 순위가 낮은 프로세스부터 Kill함. 두 번째로, 플랫폼 동작 구현 시 프로세스 우선 순위에 따라 동작이 변경될 수 있음. 예를 들어, Doze 모드 진입 시, ForegroundService를 갖고있는 프로세스는 Doze 제약을 피할 수 있지만, 그 보다 낮은 우선순위의 프로세스는 Doze 제약을 받게됨.
-=======
-질문의도: https://developer.android.com/guide/components/processes-and-threads 문서를 읽어봤는지 확인한다.
-
-답변: 포그라운드/가시적/서비스/백그라운드/빈 프로세스 순서. 빈 프로세스는 캐시 용도로 남아있지만, 가장 먼저 제거될 수 있다.
-프로세스 우선순위 때문에 발생하는 문제도 있다. Activity의 onDestroy가 반드시 불린다는 보장이 없는 이유 가운데 하나다.
-앱 위젯에서 AsyncTask를 써도 안 되기도 한다. 앱 위젯이 업데이트 안 되다가 앱을 실행하고 나면 업데이트 된다고 문의가 들어오게 된다.
-앱 위젯도 BroadcastReceiver라서 onReceive()가 끝나자마자 다른 컴포넌트가 실행되고 있지 않다면 우선순위가 가장 아래로 내려가서 프로세스가 종료될 가능성이 많다.
-즉 앱 위젯에서 비동기 동작을 하려면 다시 서비스에 넘겨서 서비스에서 진행해야만 한다.
-아래 나오는 질문 가운데 BroadcastReceiver에서 Toast를 띄워도 되는가 하는 것도 프로세스 우선순위를 이해하면 된다.
->>>>>>> d3090d92329a512536195833084a068bf571e90d
 
 ### Low Memory Killer와 OOM Killer의 차이
 
@@ -84,7 +73,7 @@ Binder를 통한 데이터 크기 제한이 있고, 대표적인 것으로 Bitma
 * https://dalinaum-kr.tumblr.com/post/4528344482/android-low-memory-killer?fbclid=IwAR2m19gh77o9gcX62OFLBNpvJaUWhuG_YRO49poJvKJ9ZJtKXNE5ezGyNbI
 
 **by @suribada**
-질문 의도: 프로세스 우선 순위가 내부적으로 어떻게 동작하는지 이해하는 것과, OOM Killer와 왜 구분되는지
+질문 의도: 프로세스 우선 순위가 내부적으로 어떻게 동작하는지 이해하는가? OOM Killer와 왜 구분되는가?
 
 답변: (위 답변에 더해서) OOM Killer 동작하기 이전에 Low Memory Killer가 동작한다. 
 OOM Killer는 주 동작이 메모리를 많이 사용하는 것을 종료시키는데, Low Memory Killer가 우선순위에 따라 메모리를 줄이는 노력을 먼저 하고 도저히 안 될 때 OOM Killer가 동작한다.
@@ -111,11 +100,11 @@ OOM Killer는 주 동작이 메모리를 많이 사용하는 것을 종료시키
 **by @suribada**
 질문 의도: 예전 방식으로 여전히 하고 있는지 정도를 파악하기 위한 것이다.
 Apache HttpClient를 사용하고 있다면 왜 아직 사용하는지 문제는 무엇인지(왜 deprecated 되었는지도..
-Apache HttpClient가 하위 호환성이 거의 고려되지 않고 만들어짐),
+Apache HttpClient가 하위 호환성을 거의 고려하지 않고 만들어짐),
 HttpUrlConnection을 사용하고 있다면 왜 사용하는지 번거로운 점이 무엇인지,
 Retrofit을 사용하고 있다면 RxJava까지 함께 사용하는지(기왕 Retrofit를 사용한다면 RxJava를 쓰는게 
 단순해짐),
-다른 라이브러리를 사용한다면 왜 사용하는지 알려는 것이다.
+다른 라이브러리를 사용한다면 왜 사용하는지.
 
 ### ActivityThread
 
@@ -135,7 +124,7 @@ Retrofit을 사용하고 있다면 RxJava까지 함께 사용하는지(기왕 Re
 ??? 아마도...RPC 통신? AOSP 코드 뜯어본 기억에는 AIDL 을 이용한 RPC 통신이다. 과거 이 AIDL 을 스내핑 해서 기기의 전체 앱 Lifecycle 을 모니터하는 서비스를 만든 적이 있다.
 
 **by @suribada**
-질문 의도: 외부 프로세스인 system_server와 통신하는 방법이 무엇인지 확인해보았는지..
+질문 의도: 외부 프로세스인 system_server와 통신하는 방법이 무엇인지 확인해보았는가?
 
 답변: aidl로 생성한 건 아니고 ApplicationThread라는 Stub 구현이 있어서 sytem_server에서 메서드를 호출한다.
 
@@ -157,7 +146,7 @@ UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간�
 - RxJava, Coroutine에서 쓰레드 스케줄러 관리를 작업에 맞게 잘 전환 시켜줘야 하는 이유이기도 함
 
 **by @suribada**
-질문 의도: ANR을 모호하게 이해하는지 확인한다. 
+질문 의도: ANR을 모호하게 이해하는가?
 
 답변: (위 답변에 더해서) 명시적으로(AsyncTask, IntentService 등을 포함해서) 스레드를 사용하지 않으면, 기본은 모두 메인 스레드를 점유하는 동작이다. Service도 백그라운드에서 실행된다고 해서(UI가 아니라는 의미일 뿐인데..) 백그라운드 스레드로 오해할 수 있지만 스레드 생성하지 않는다면 onStartCommand()는 메인 스레드에서 동작한다. 이때문에 Activity의 동작이 멈출 수도 있다. 따라서 다른 컴포넌트 때문에 ANR이 생길 수도 있다.
 
@@ -166,7 +155,9 @@ UI Thread 에서 Network IO, File IO, 반복문 등 지나치게 많은 시간�
 특정 쓰레드에서 동작하도록 실행할 수 있는 외부 인터페이스로 Handler 가 있으며 이 Handler 는 선언하는 시점에 Thread 에 종속된다. Handler 를 통해 동작하는 Runnable 객체를 전달하면 이는 Message Queue 에 담겨져있다가 Looper 가 Queue 에서 하나씩 객체를 꺼내서 동작하도록 한다.
 
 **by @suribada**
-질문 의도: 모든 것은 MessageQueue를 거친다는  
+질문 의도: Handler에서 보내는 모든 Message는 MessageQueue를 거쳐서 순차적으로 처리되는 것을 이해하고 있는가?
+
+답변: (위 답변에 더해서) Looper가 MessageQueue를 유지한다. Handler는 MessageQueue에 Message를 전달하는 역할을 한다. 
 
 ### Looper는 몇 개?
 
@@ -175,7 +166,7 @@ Thread 당 1개
 **by @suribada**
 질문 의도: Thread Local Storage에 Looper가 저장되는지 이해하는가?
 
-답변: 메인 Looper는  앱이 처음 구동되면서 ActivityThread에서 생성해두고 메인 스레드의 이벤트 큐 역할을 한다. 다른 스레드에서는 Looper.prepare()로 Thread Local Storage()
+답변: Thread Local Strorage에 저장되기 때문에 스레드당 1개이다. 메인 Looper는  앱이 처음 구동되면서 ActivityThread에서 생성해두고 메인 스레드의 이벤트 큐 역할을 한다. 다른 스레드에서는 Looper.prepare()로 Thread Local Storage에 새로 생성된다. 이미 하나 생성되었는데 또 다시 prepare()로 생성 시도하면 크래시가 발생한다.
 
 
 ### Message object pool, Message.obtain 쓰는 이유.
@@ -185,14 +176,26 @@ Thread 당 1개
 **by @huewu**
 * 모든 UI Event 및 대부분의 System 상호작용은 Message 형태로 처리됨. 따라서, Message Ojbect는 매우 많이 그리고 자주 사용됨. 이 때 매번 작은 오브젝트를 생성하고 삭제하면 시스템 성능에 악영향을 줄 수 있음. 따라서 너무 빈번한 Message object 생성 및 삭제를 방지하기 위해, Object Pool 형태를 유지해 Message object를 재활용.
 
-###  message pool의 개수
+**by @suribada**
+질문 의도: new Message()를 쓰지 않고 Message.obtain()을 왜 권장할까?
+
+답변: (위 답변에 더해서) new Message()로 생성해도 결국 재사용을 위한 recycle() 메서드는 호출해서 오버헤드만 증가하는 셈이다.
+
+###  message object pool 개수
 ???
 
 **by @huewu**
 * Application Process당 1개? 
 
-###  pool은 어디에 어떤 형태로?
+**by @suribada**
+답변: Message에 static 변수로 있기 때문에 1개가 맞다. 
+개수가 중요하진 않지만 pool에 최대 Message 개수는 50개다.
+
+###  message object pool은 어디에 어떤 형태로?
 ???
+
+**by @suribada**
+답변: Message에 next 변수가 있어서 링크 구조로 되어 있다.
 
 ### Handler 용도
 
@@ -201,19 +204,35 @@ Thread 당 1개
 **by @huewu**
 * LooperThread에 연결된 Looper로 Message를 전달하고 (sendMessage), 전달된 Message를 처리하는 역할(handleMessage). 또한 Messenger 형태로 감싼 후 다른 Process로 전달되어 IPC 채널을 만드는데도 사용될 수 있다.
 
-### ViewParent, getParent
+**by @suribada**
+질문 의도: Handler를 어떤 용도에 사용해 보았는가?
+
+답변: 백그라운에서 UI 업데이트, 메인 스레드에서 다음 작업 예약, 반복 UI 갱신, 시간 제한 등
+
+### View에서 getParent() 메서드가 반환하는 ViewParent는?
 
 ???
+**by @suribada**
+질문 의도: View의 getParent() 메서드가 반환하는 게 ViewGroup이 아닌 ViewParent인데 의문을 가져보았는가?
+
+답변: 일반적으로는 getParent() 메서드 결과를 ViewGroup으로 캐스팅한다. ViewParent를 구현한 것은 ViewRootImpl과 ViewGroup이 있다. 내부적으로 쓰이는 게 ViewRootImpl이다.
 
 ### ViewRootImpl의 용도는?
 
 ???
 
+**by @suribada**
+질문 의도: ViewRootImpl도 Call Stack에서 자주 볼 수 있는데 확인해보았는가?
+
+답변: getParent()를 계속 올라가다 보면 가장 상위 ViewGroup이 있다(구체적으로는 PhoneWindow$Decorview).
+View에서 invalidate()를 호출하면 다시 그리는 것은 전체 View 트리 상에서 실행해야 하기 때문에 상위 ViewGroup을 자꾸 호출하고 가장 상위 ViewGroup에서 다시 그리라고 할 수도 있었겠지만, 다시 그리는 작업을 ViewGroup에서 하지 않고 로직을 분리한 것이 ViewRootImpl이다. getParent()로 계속 올라가서 최종으로 가져오는 ViewRootImpl이 결국 최상위 계층 역할을 하고 여기서 View 트리를 다시 그리게 한다.
+
 ### AsyncTask 사용 시 문제점
 
 ICS 이전의 경우 AsyncTask 가 버전별로 ThreadPool 관리, 동시성 다중처리 등이 균일하지 않아 OS 버전별로 의도된 동작이 달랐으나 현재는 Min-SDK 가 ICS 이후기 때문에 이러한 문제를 만날 가능성은 없어졌다.
 
-고전적인 이슈는 inner class 로 선언했을 때 발생하는 메모리 릭과 Lifecycle 에 의한 제어 처리가 미흡 할 수 있다는 것이다. anonymous inner class 로 선언한 경우 일반적인 실수가 View 객체레 바로 접근한다는 문제가 있다. 이 경우 해당 Activity/Fragment 가 종료 되어도 순환 참조로 인한 메모리 릭이 발생할 수 있다. 또한 화면이 종료되어도 AsyncTask 를 별도로 종료하지 않는다면 의도치 않게 컴퓨팅 리소스를 사용하게 된다.
+고전적인 이슈는 inner class 로 선언했을 때 발생하는 메모리 릭과 Lifecycle 에 의한 제어 처리가 미흡 할 수 있다는 것이다. anonymous inner class 로 선언한 경우 일반적인 실수가 View 객체에 바로 접근한다는 문제가 있다. 이 경우 해당 Activity/Fragment 가 종료 되어도 순환 참조로 인한 메모리 릭이 발생할 수 있다. 또한 화면이 종료되어도 AsyncTask 를 별도로 종료하지 않는다면 의도치 않게 컴퓨팅 리소스를 사용하게 된다.
+
 
 ### AsyncTask 취소
 
