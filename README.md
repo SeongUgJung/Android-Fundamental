@@ -67,7 +67,7 @@ Binder를 통한 데이터 크기 제한이 있고, 대표적인 것으로 Bitma
 ? Low Memory Killer 현재 foreground 어플리케이션이 더 많은 메모리가 필요로 하는 경우 백그라운드의 다른 어플리케이션이나 프로세스를 반환하여 Foreground 앱을 위한 추가적인 메모리를 확보하고자 합니다. 반면 OOM Killer 는 추가적인 메모리 확보가 채 이루어지기 전이거나 더이상 확보할 메모리가 없는 경우에 메모리를 더 할당하는 액션이 발생할 때 해당 프로세스를 종료하도록 합니다.
 
 **by @huewu**
-* Low Momory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
+* Low Memory Killer는 OOM이 발생하기 전에 플랫폼에서 선제적으로 메모리 확보를 위해 프로세스를 종료시키는 것. 따라서 우선 순위가 낮은 프로세스부터 종료하게 됨. Out of Memory Killer는 정말로 allocatae할 메모리 공간이 없을때 발생하며, 프로세스 우선 순위 관계없이 프로세스를 종료할 수 있음. 따라서, 앱 runtime crash나 kernal crash가 발생할 수 있음.  
 
 **Ref**
 * https://dalinaum-kr.tumblr.com/post/4528344482/android-low-memory-killer?fbclid=IwAR2m19gh77o9gcX62OFLBNpvJaUWhuG_YRO49poJvKJ9ZJtKXNE5ezGyNbI
@@ -233,14 +233,26 @@ ICS 이전의 경우 AsyncTask 가 버전별로 ThreadPool 관리, 동시성 다
 
 고전적인 이슈는 inner class 로 선언했을 때 발생하는 메모리 릭과 Lifecycle 에 의한 제어 처리가 미흡 할 수 있다는 것이다. anonymous inner class 로 선언한 경우 일반적인 실수가 View 객체에 바로 접근한다는 문제가 있다. 이 경우 해당 Activity/Fragment 가 종료 되어도 순환 참조로 인한 메모리 릭이 발생할 수 있다. 또한 화면이 종료되어도 AsyncTask 를 별도로 종료하지 않는다면 의도치 않게 컴퓨팅 리소스를 사용하게 된다.
 
+**by @suribada**
+질문 의도: AsyncTask를 사용하면서 어떤 문제가 있었는가?
 
 ### AsyncTask 취소
 
 ? AsyncTask.cancel()?? 하지만 이경우 Thread-Interrupt 가 발생 하기 때문에 만약 doInBackground 에서 for-loop 와 같은 반복문이 있다면 반복문 내부에 Thread 가 종료되었는지 확인하는 추가코드가 필요하다.
 
+**by @suribada**
+질문 의도: cancel() 메서드를 사용해본 적이 있는가? 
+
+답변: cancel() 메서드를 호출하면 isCancelled() 메서드가 true를 반환하는데, doInBackGround() 에서는 isCancelled() 메서드로 자주 체크하는 로직이 들어가게 된다.
+
 ### mayInterruptIfRunning의 의미
 
 ???
+
+**by @suribada**
+질문 의도: cancel(true 또는 false) 구분을 하고 있는가?
+
+답변: doInBackground() 스레드에 인터럽트할 것인지이다. true를 전달해도 실제 스레드가 종료하는지는 상황에 따라 다르다. Tread의 sleep(), join() 메서드가 실행중이거나 Object의 wait()가 실행 중이라면 InterruptedException이 발생할 것이고, doInBackground()에서 Thread.interrupted()로 체크하고 있다면 종료 가능할 수 있다.
 
 ### HandlerThread란?
 
@@ -249,14 +261,36 @@ ICS 이전의 경우 AsyncTask 가 버전별로 ThreadPool 관리, 동시성 다
 **by @huewu**
 * Message를 처리할 수 있는 Looper가 있는 Thread?
 
+**by @suribada**
+질문 의도: IntentService를 분석 해보았는가? 비슷한 기능을 별도로 작성하지 않고 직접 사용해봤는가?
+
+답변: Looper.prepare()와 Looper.loop()를 내부적으로 호출한다. 스레드에서 메시지 큐 구조가 필요할 때 사용할 수 있다. 즉 스레드에서 순차 작업에 사용할 수 있다.
 
 ### deep sleep 현상은 무엇이고 이에 대한 대책은?
 
 ? Doze 모드??? 
 
+**by @suribada**
+질문 의도: deep sleep 현상을 이해하고 대책이 있는가?
+
+답변: wakelock과 대비된다. 상시 전원이 연결된 데스크탑과 달리 모바일 단말은 꺼져 있는 상태가 기본이고 필요할 때만 ON시켜서 사용한다. 화면이 꺼지면 몇 십초 내로 sleep 상태로 들어간다.
+일반적으로 deep sleep 상태라고 표현한다.
+현상은 UI에 시간을 예를 들어 1초마다 업데이트한다면, 화면 꺼두고 한참 있다가 시간을 보면 
+오래 전 시간을 보여주다가 현재 시간으로 갱신한다. 1초가 아니라 1분 간격이라면 한참동안을 이전 시간 보여주다가 갱신하는 셈이다. 중간에 갱신을 하지 않는 시간이 바로 deep sleep에 들어간 것이다.
+일반적인 대책은 결국 wakelock을 잡는 것인데, AlarmManager나 JobScheduler 같은 것을 사용할 때가 많다.
+
 ### Context는 어떤 데 쓰이고 자식 클래스는 어떻게 되나?
 
 ? 주로 앱 전체 리소스나 시스템 리소스에 접근, 화면이나 특정 상황에 정보에 접근할 때 사용한다. ActivityContext, ServiceContext, BroadcastContext, ApplicationContext
+
+**by @suribada**
+질문 의도: Context가 무엇인가?클래스 hierarchy는 어떻게 되나?
+
+답변: Context로 리소스에 접근하고 컴포넌트도 시작할 수 있다.
+Context는 추상 클래스다. ContextWapper가 Context를 상속하고 
+Activity, Service, Application이 ContextWrapper를 상속한다.
+ContextImpl도 Context를 상속하는데, ContextWrapper는 Wrapping한 것이 ContextImpl이다.
+ContextImpl이 여러 원격 서비스에 대한 매핑을 유지하기도 하고(예전에는 내부에 유지했고 요즘은 별도 클래스로), 실제 동작을 여기서 실행한다.
 
 ### Activity에서 this, getBaseContext(), getApplicationContext() 차이
 
